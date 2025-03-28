@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Models for blog with AI integration
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String
+  image         String?
+  bio           String?   @db.Text
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  posts         Post[]
+  comments      Comment[]
+  aiPrompts     AIPrompt[]
+}
+
+model Post {
+  id            String    @id @default(cuid())
+  title         String
+  content       String    @db.Text
+  summary       String?   @db.Text
+  published     Boolean   @default(false)
+  slug          String    @unique
+  featuredImage String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  author        User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId      String
+  categories    Category[]
+  comments      Comment[]
+  tags          Tag[]
+  aiGenerated   Boolean   @default(false)
+}
+
+model Comment {
+  id            String    @id @default(cuid())
+  content       String    @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  author        User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId      String
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId        String
+  parentId      String?
+  parent        Comment?  @relation("CommentToComment", fields: [parentId], references: [id], onDelete: SetNull)
+  children      Comment[] @relation("CommentToComment")
+}
+
+model Category {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  slug          String    @unique
+  description   String?   @db.Text
+  posts         Post[]
+}
+
+model Tag {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  slug          String    @unique
+  posts         Post[]
+}
+
+// AI integration models
+model AIPrompt {
+  id            String    @id @default(cuid())
+  prompt        String    @db.Text
+  response      String    @db.Text
+  createdAt     DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  type          AIType
+}
+
+model AIConfig {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  apiKey        String?
+  model         String    @default("gpt-3.5-turbo")
+  temperature   Float     @default(0.7)
+  maxTokens     Int       @default(2000)
+  active        Boolean   @default(true)
+}
+
+// Enums
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AIType {
+  CONTENT_GENERATOR
+  SUMMARIZER
+  HEADLINE_GENERATOR
+  SEO_OPTIMIZER
+  IMAGE_PROMPT
+}
