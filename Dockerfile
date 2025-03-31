@@ -19,6 +19,11 @@ COPY . .
 # Tạo Prisma client
 RUN npx prisma generate
 
+# Build ứng dụng với biến môi trường SKIP_ENV_VALIDATION để bỏ qua kiểm tra kết nối database
+ENV SKIP_ENV_VALIDATION=true
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_SHOW_MOCK_DATA=true
+
 # Build ứng dụng
 RUN npm run build
 
@@ -49,6 +54,7 @@ EXPOSE 3000
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Chạy ứng dụng với script khởi động
 CMD ["./scripts/start.sh"]

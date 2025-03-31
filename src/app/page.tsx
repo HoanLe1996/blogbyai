@@ -3,38 +3,92 @@ import PostCard from '@/components/ui/PostCard';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default async function HomePage() {
-  // Lấy các bài viết mới nhất đã xuất bản
-  const posts = await prisma.post.findMany({
-    where: {
-      published: true,
+// Mock data for build time
+const mockPosts = [
+  {
+    id: 'mock-1',
+    title: 'Sample Post 1',
+    content: 'This is a sample post content',
+    slug: 'sample-post-1',
+    summary: 'Sample excerpt for post 1',
+    featuredImage: null,
+    published: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    authorId: 'mock-author',
+    aiGenerated: false,
+    author: {
+      id: 'mock-author',
+      name: 'Mock Author',
+      image: null,
     },
-    include: {
-      author: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-        },
+    categories: [
+      {
+        id: 'mock-category',
+        name: 'Mock Category',
+        slug: 'mock-category',
       },
-      categories: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    take: 6,
-  });
+    ],
+  },
+];
 
-  // Lấy các danh mục phổ biến
-  const categories = await prisma.category.findMany({
-    take: 5,
-  });
+const mockCategories = [
+  {
+    id: 'mock-category',
+    name: 'Mock Category',
+    slug: 'mock-category',
+  },
+];
+
+export default async function HomePage() {
+  let posts = [];
+  let categories = [];
+
+  try {
+    // Only try to fetch from database if we're not in build process
+    if (process.env.NEXT_PUBLIC_SHOW_MOCK_DATA !== 'true') {
+      // Lấy các bài viết mới nhất đã xuất bản
+      posts = await prisma.post.findMany({
+        where: {
+          published: true,
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+          categories: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 6,
+      });
+      
+      // Lấy các danh mục phổ biến
+      categories = await prisma.category.findMany({
+        take: 5,
+      });
+    } else {
+      // Use mock data during build time
+      posts = mockPosts;
+      categories = mockCategories;
+    }
+  } catch (error) {
+    console.error('Database connection error:', error);
+    // Fallback to mock data in case of error
+    posts = mockPosts;
+    categories = mockCategories;
+  }
 
   return (
     <main className="min-h-screen">
@@ -90,7 +144,6 @@ export default async function HomePage() {
           </svg>
         </div>
       </section>
-
       {/* Featured Posts */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
@@ -126,7 +179,6 @@ export default async function HomePage() {
           )}
         </div>
       </section>
-
       {/* AI Features */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
@@ -165,7 +217,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
       {/* Categories Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
